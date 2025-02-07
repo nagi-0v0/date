@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        #root {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            display: flex;
+            width: 100%;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: white;
+            padding: 20px;
+            border-right: 1px solid #e5e7eb;
+            flex-shrink: 0;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+        }
+
+        .calendar-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 400px;
+            margin: 0 auto;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 32px);
+            gap: 4px;
+            justify-content: center;
+        }
+
+        .calendar-day {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+
+        .calendar-day.completed {
+            background: #9CA3AF;
+            color: white;
+            border-radius: 50%;
+        }
+
+        .calendar-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-title {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .calendar-subtitle {
+            font-size: 14px;
+            color: #6B7280;
+        }
+
+        .sidebar-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .calendar-list {
+            margin-bottom: 20px;
+        }
+
+        .calendar-item {
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .calendar-item:hover {
+            background-color: #f3f4f6;
+        }
+
+        .calendar-item.selected {
+            background-color: #f3f4f6;
+        }
+
+        .delete-button {
+            border: none;
+            background: none;
+            color: #9CA3AF;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .delete-button:hover {
+            color: #6B7280;
+        }
+
+        .new-calendar-form {
+            margin-top: 20px;
+        }
+
+        .input-text {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .color-picker-container {
+            display: flex;
+            gap: 8px;
+        }
+
+        .color-picker {
+            width: 32px;
+            height: 32px;
+            padding: 2px;
+        }
+
+        .add-button {
+            flex-grow: 1;
+            padding: 8px;
+            background-color: #f3f4f6;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .add-button:hover {
+            background-color: #e5e7eb;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        function App() {
+            const [calendars, setCalendars] = React.useState([
+                {
+                    id: 1,
+                    title: '운동',
+                    color: '#9CA3AF',
+                    completedDates: [1, 2, 3, 4, 5, 6]
+                }
+            ]);
+            const [selectedCalendar, setSelectedCalendar] = React.useState(1);
+            const [newTitle, setNewTitle] = React.useState('');
+            const [newColor, setNewColor] = React.useState('#9CA3AF');
+
+            const addCalendar = () => {
+                if (!newTitle.trim()) return;
+                const newCalendar = {
+                    id: Date.now(),
+                    title: newTitle,
+                    color: newColor,
+                    completedDates: []
+                };
+                setCalendars([...calendars, newCalendar]);
+                setNewTitle('');
+                setNewColor('#9CA3AF');
+            };
+
+            const deleteCalendar = (id) => {
+                setCalendars(calendars.filter(cal => cal.id !== id));
+                if (selectedCalendar === id) {
+                    setSelectedCalendar(calendars[0]?.id);
+                }
+            };
+
+            const toggleDate = (day) => {
+                setCalendars(calendars.map(cal => {
+                    if (cal.id !== selectedCalendar) return cal;
+                    return {
+                        ...cal,
+                        completedDates: cal.completedDates.includes(day)
+                            ? cal.completedDates.filter(d => d !== day)
+                            : [...cal.completedDates, day]
+                    };
+                }));
+            };
+
+            const currentCalendar = calendars.find(cal => cal.id === selectedCalendar);
+            const currentDate = new Date();
+            const daysInMonth = new Date(
+                currentDate.getFullYear(),
+                currentDate.getMonth() + 1,
+                0
+            ).getDate();
+            const firstDay = new Date(
+                currentDate.getFullYear(),
+                currentDate.getMonth(),
+                1
+            ).getDay();
+
+            return (
+                <div className="app-container">
+                    <div className="sidebar">
+                        <h2 className="sidebar-title">나의 달력들</h2>
+                        <div className="calendar-list">
+                            {calendars.map(cal => (
+                                <div
+                                    key={cal.id}
+                                    className={`calendar-item ${selectedCalendar === cal.id ? 'selected' : ''}`}
+                                    onClick={() => setSelectedCalendar(cal.id)}
+                                >
+                                    <span>{cal.title}</span>
+                                    <button
+                                        className="delete-button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            deleteCalendar(cal.id);
+                                        }}
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="new-calendar-form">
+                            <input
+                                type="text"
+                                className="input-text"
+                                placeholder="새로운 달력 제목"
+                                value={newTitle}
+                                onChange={(e) => setNewTitle(e.target.value)}
+                            />
+                            <div className="color-picker-container">
+                                <input
+                                    type="color"
+                                    className="color-picker"
+                                    value={newColor}
+                                    onChange={(e) => setNewColor(e.target.value)}
+                                />
+                                <button className="add-button" onClick={addCalendar}>
+                                    추가하기
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="main-content">
+                        {currentCalendar && (
+                            <div className="calendar-container">
+                                <div className="calendar-header">
+                                    <h2 className="calendar-title">
+                                        {currentDate.toLocaleString('en-US', { 
+                                            month: 'long', 
+                                            year: 'numeric' 
+                                        })}
+                                    </h2>
+                                    <p className="calendar-subtitle">내면의 성장을 향한 여정</p>
+                                </div>
+                                <div className="calendar-grid">
+                                    {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => (
+                                        <div key={day} className="calendar-day">{day}</div>
+                                    ))}
+                                    {Array(firstDay).fill(null).map((_, i) => (
+                                        <div key={`empty-${i}`} className="calendar-day" />
+                                    ))}
+                                    {Array(daysInMonth).fill(null).map((_, i) => {
+                                        const day = i + 1;
+                                        const isCompleted = currentCalendar.completedDates.includes(day);
+                                        return (
+                                            <button
+                                                key={day}
+                                                className={`calendar-day ${isCompleted ? 'completed' : ''}`}
+                                                onClick={() => toggleDate(day)}
+                                                style={{
+                                                    backgroundColor: isCompleted ? currentCalendar.color : 'transparent'
+                                                }}
+                                            >
+                                                {day}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
